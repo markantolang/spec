@@ -1,10 +1,11 @@
 # Markanto — Specification
 
-> **Version 0.1.0** · frozen · English (normative edition)
+> **Version 0.2.0** · frozen · English (normative edition)
 >
-> The normative specification for the Markanto 0.1.0 language line. It does not
+> The normative specification for the Markanto 0.2.0 language line. It does not
 > change; later versions may evolve the language, and there is no 1.0
-> compatibility freeze yet.
+> compatibility freeze yet. Markanto 0.1.0 keeps its own specification,
+> [`v0.1.0`](https://github.com/markantolang/spec/blob/v0.1.0/spec.md).
 
 ---
 
@@ -13,8 +14,31 @@ models it in a strict semantic AST, and serialises it canonically. Meaning
 must travel with the document: external parser profiles must not change the
 semantic interpretation of otherwise identical source text.
 
-This document is normative for Markanto 0.1.0. Historical design notes and
+This document is normative for Markanto 0.2.0. Historical design notes and
 pre-0.1 experiments are non-normative.
+
+## Changes from 0.1.0
+
+Two changes bring Markanto closer to GFM where 0.1.0 differed without need:
+
+1. **A number with a dot is text.** Digits followed by `.` or `)` and then a
+  decimal digit open no list item: `3.14 is π`, `2.0 and later` and
+  `1.2.3 Overview` are ordinary text at the start of a line (§9.3.1). In 0.1.0
+  they were error 9.1, and an escape kept them text (`3\.14`); in 0.2.0 that
+  escape is no longer needed, so it is a tolerated surface, noncanonical in
+  strict mode (§10.8).
+2. **`\|` in a table cell is a pipe, inside code too.** Within a table cell,
+  `\|` stands for `|` also inside a code span, inline math, a superscript, a
+  subscript or an autolink, as in GFM; canonical cells write every literal `|`
+  as `\|`, except in an MIB attribute value (§12.3, §12.4). In 0.1.0 the
+  backslash stayed in such a token's value, and an unescaped `|` inside it was
+  the canonical form.
+
+Every document that is valid Markanto 0.1.0 and has no `\|` inside an atomic
+inline token, a superscript or a subscript of a table cell means the same in
+0.2.0; its canonical form differs only where 0.1.0 escaped a digit before `.`
+or `)` at the start of a line, or wrote a `|` unescaped inside an atomic token
+of a table cell.
 
 ## Reserved wrapper tags
 
@@ -60,10 +84,10 @@ whenever those forms round-trip safely.
 
 ### 1.1 Normative Markdown baseline
 
-Markanto 0.1.0 uses **CommonMark 0.31.2 (2024-01-28)** as its normative
+Markanto 0.2.0 uses **CommonMark 0.31.2 (2024-01-28)** as its normative
 Markdown baseline for Markdown constructs that this specification retains.
 The baseline is fixed to that version; a later CommonMark release does not
-silently change Markanto 0.1.0.
+silently change Markanto 0.2.0.
 
 Normative reference: <https://spec.commonmark.org/0.31.2/>.
 
@@ -78,16 +102,16 @@ links and images and their destination/title syntax.
 This makes Markanto a deliberate delta over a stable Markdown baseline rather
 than a copy of the complete CommonMark grammar.
 
-For explicitly retained GitHub Flavored Markdown extensions, Markanto 0.1.0
+For explicitly retained GitHub Flavored Markdown extensions, Markanto 0.2.0
 uses **GFM 0.29-gfm (2019-04-06)** as a fixed extension baseline. This applies
 only where Markanto explicitly retains a GFM extension, notably pipe tables and
 task-list markers; GFM does not replace the CommonMark 0.31.2 baseline above.
-A later GFM release likewise does not silently change Markanto 0.1.0.
+A later GFM release likewise does not silently change Markanto 0.2.0.
 
 Normative GFM reference: <https://github.github.io/gfm/>.
 
 For Core operations whose result depends on Unicode character properties or
-normalisation data, Markanto 0.1.0 fixes **Unicode 15.1.0**. A conforming
+normalisation data, Markanto 0.2.0 fixes **Unicode 15.1.0**. A conforming
 implementation must not let a newer or older runtime Unicode database silently
 change Core recognition, NFC-normalised AST values, or canonical output.
 
@@ -100,7 +124,7 @@ expanded, non-normative companion: it pairs every row below with the
 conformance-harness expectation and must be updated in the same change as this
 table.
 
-| Baseline construct | Markanto 0.1.0 |
+| Baseline construct | Markanto 0.2.0 |
 | --- | --- |
 | tabs | retained as literal / inline content; the CommonMark contextual tab expansion is narrowed — tabs are not permitted in list / container structural indentation |
 | backslash escapes | retained in ordinary inline content and in the delegated direct-link destination / title and fence-info fields; literal contexts keep the backslash (see 10.4, 10.5.1) |
@@ -2043,7 +2067,8 @@ context-sensitive and serialisability constraints such as: no soft/hard breaks
 anywhere inside a single-line context; no nested `Link` inside link label
 content; no `-->` in `CommentBlock.value`; non-empty single-line
 `InlineMath.value` without the literal closing sequence `` `$ ``; `Sup.value`
-without `^`; `Sub.value` without `~`; context-correct resource attribute sets;
+without `^`; `Sub.value` without `~`; in a table cell, neither value with a `\`
+directly before a `|`; context-correct resource attribute sets;
 exact table row widths; normalised ordered-list `start`/`value` fields;
 representable container TYPE/TITLE and Grid states; context-correct block-ID
 placement; and non-empty container children.
@@ -2108,7 +2133,7 @@ resource-budget defaults belong to reference tooling or renderer documents.
 
 ### 8.2 Deliberate non-features
 
-Markanto 0.1.0 deliberately does not provide:
+Markanto 0.2.0 deliberately does not provide:
 
 - raw HTML passthrough;
 - Setext headings;
@@ -2239,6 +2264,12 @@ In strict mode only `.` is permitted as the delimiter. Leading zeros are not
 canonical and are removed (`01.` → `1.`); the value must be an integer in
 the inclusive range **0..999,999,999** (at most nine decimal digits after
 normalisation).
+
+Digits followed by the delimiter and then a decimal digit are no list marker,
+but ordinary text: `3.14 is π`, `2.0 and later` and `1.2.3 Overview` start a
+paragraph or continue one. Any other character where the space belongs remains
+error 9.1 (`1.Item`, `2)Second`): a missing space must not silently turn a list
+item into text.
 
 The semantic AST stores ordered numbering in one normalized form. `List.start` is
 permitted only on ordered lists and is present exactly when the first visible
@@ -2489,7 +2520,7 @@ a syntax error.
 
 | No. | Description |
 | --- | --- |
-| 9.1 | No or more than one space after the marker |
+| 9.1 | No or more than one space after the marker (a digit after an ordered marker's delimiter makes it text, 9.3.1) |
 | 9.2 | Empty list item |
 | 9.3 | Ambiguous or, in strict mode, non-canonical indentation |
 | 9.4 | Upward level jump by more than one level |
@@ -3055,7 +3086,7 @@ surface.
 ### 10.8.1 HTML entities
 
 Named, decimal, and hexadecimal HTML entities are recognised in normal text.
-For named references, Markanto 0.1.0's exact normative mapping is committed as
+For named references, Markanto 0.2.0's exact normative mapping is committed as
 `data/html-named-character-references-v0.1.0.json`; keys are entity names
 without `&`/`;`, and source recognition uses `&NAME;`. Implementations may
 compile that mapping into another representation but must accept exactly the
@@ -3399,7 +3430,7 @@ elements are present.
 ### 12.1 Purpose
 
 Tables present tabular data with rows and columns. Cell contents are inline-only
-— no blocks, lists, containers, or Grid geometry. Markanto 0.1.0 deliberately
+— no blocks, lists, containers, or Grid geometry. Markanto 0.2.0 deliberately
 keeps pipe tables close to the GFM model: table cells have **no rowspan or
 colspan syntax**. Markanto's `^` / `<` span metaphor belongs exclusively to the
 explicit fenced Grid subgrammar (§2.7.7).
@@ -3434,13 +3465,22 @@ row-shape and tokenisation rules below:
 - Leading and trailing `|` are optional but canonically present.
 - Cell contents permit ordinary single-line inline markup. A cell whose complete
   trimmed content is `^` or `<` is ordinary literal/inline input; neither token
-  has table-span semantics in 0.1.0.
+  has table-span semantics in 0.2.0.
 - Row tokenisation scans left to right. A pipe is a column delimiter only
   when it is not backslash-escaped and is not inside a complete atomic inline
   token already recognised by the inline scanner. Complete inline-code spans,
   direct Markdown links/images, autolinks, and MIB wrappers are atomic for this
   purpose. `\|` contributes a literal pipe to cell inline input rather than a
-  column boundary.
+  column boundary — inside an atomic inline token as well, as in GFM. Within a
+  code span, inline math (whose backtick span is atomic as a code span is,
+  §14.2) or an autolink of a cell, whose content knows no escapes otherwise,
+  each `\|`, read from left to right, stands for `|`; `\\|` therefore stands
+  for `\|`. A superscript or subscript (§10.11) is not atomic for this
+  purpose; within one, `\|` stands for `|` as well, and its value cannot hold
+  a `\` directly before a `|` in a cell. In a link or image and in the content
+  of an MIB wrapper, `\|` is a `|` by the ordinary backslash escape (§10.8). The
+  value of an MIB attribute (§4.7) is the one exception: it takes a `|` as
+  written.
 - Blank lines before and after the table are optional in normal parser mode,
   provided the table start and end are unambiguous through the separator
   line, context identity, and local syntax boundaries. In strict mode and in
@@ -3495,6 +3535,10 @@ Rules:
 - separator cells use the shortest canonical marker that preserves alignment:
   `---`, `:---`, `---:`, or `:---:`;
 - cell contents are serialized by the ordinary inline formatter;
+- every literal `|` in a cell is written `\|`, also within a code span, inline
+  math, a superscript or subscript, an autolink or a link's destination and
+  title; only an MIB attribute value writes it as it is. A canonical table
+  without `|` in an MIB attribute value is therefore the same table in GFM;
 - cell contents are not padded to equal visual width;
 - canonical serialization therefore does not depend on grapheme-width,
   terminal-width, font, locale, or `Intl.Segmenter` heuristics.
@@ -3504,7 +3548,7 @@ Rules:
 `|` as a column delimiter does not split a complete atomic inline token listed
 in 12.3. This is a deliberate Markanto delta from raw GFM row splitting and is
 part of the deterministic table tokenizer. Escaped `\|` is likewise never a
-column delimiter.
+column delimiter, and stands for `|` inside an atomic token as well (12.3).
 
 `^` and `<` intentionally have no special table-cell role; authors who need
 merged cells use fenced Grid syntax. This keeps ordinary pipe tables graceful
