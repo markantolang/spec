@@ -19,6 +19,15 @@ version.
 Each version lists its changes in a section "Changes from …" near its start;
 `git diff v0.1.0 v0.2.0` shows them in full.
 
+## Guide
+
+[`guide.md`](guide.md) is a short guide for people who write Markdown: it names
+only what Markanto writes differently and what it adds, and it is not
+normative. A change of the specification that touches a construct the guide
+shows changes the guide in the same commit, so that each tag holds the guide of
+its version. The reference implementation parses every example in the guide and
+requires it to be valid and canonical.
+
 ## Implementations
 
 - [markanto-js](https://github.com/markantolang/markanto-js) — the reference
