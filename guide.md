@@ -8,16 +8,16 @@ GitHub's Markdown is, for the most part, already Markanto. This page names only 
 
 Headings with `#`, paragraphs, `*emphasis*` and `**strong**`, `` `code` ``, fenced code blocks, lists with `-`, `*`,
 `+` or `1.`, task lists (`- [ ]`, `- [x]`), links and images (`[text](url "title")`, `![alt](picture.jpg)`), quotes
-with `>`, pipe tables, `~~strikethrough~~`, `---` as a break, and backslash escapes. A bare `https://` address becomes
-a link.
+with `>`, pipe tables, `~~strikethrough~~`, `---` as a break, and backslash escapes. A bare `https://` or `http://`
+address becomes a link; `www.example.org` and an email address stay text.
 
 Some accepted forms are written back in one canonical form: `_emphasis_` as `*emphasis*`, `__strong__` as
 `**strong**`, `***` as `---`, `~~~` fences as ```` ``` ````. They mean the same.
 
 ## Written differently
 
-- **Headings only with `#`.** A line underlined with `===` or `---` is an error, not a heading. A heading is never
-  empty.
+- **Headings only with `#`.** A line underlined with `===` is an error, not a heading. One underlined with `---` is a
+  paragraph followed by a break. A heading is never empty.
 - **Code only in fences.** Four spaces in front of a line make no code block; the indentation is dropped, with a
   warning.
 - **Links only directly.** `[text](https://example.org)` is a link; the reference form `[text][1]` with a line
@@ -36,6 +36,9 @@ Some accepted forms are written back in one canonical form: `_emphasis_` as `*em
 
   A level is at most one deeper than the line before it.
 - **Every line of a quote starts with `>`.** A line without it ends the quote.
+- **Emphasis begins and ends at the edge of a word.** `snake*case*word` and `foo**bar**` stay as written.
+- **A single `~` on each side is subscript**, as in `H~2~O`; GitHub strikes `~Hi~` through instead. Strikethrough is
+  `~~Hi~~`.
 - **A table row has as many cells as its header.** A shorter or longer row is an error.
 - **`___` on a line of its own opens a container** (below); a break is `---`.
 
