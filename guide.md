@@ -23,8 +23,9 @@ mean the same.
   indentation is dropped, with a warning.
 - **Links only directly.** `[text](https://example.org)` is a link; the reference form `[text][1]` with a line
   `[1]: https://example.org` stays text, and the line gets a warning.
-- **No HTML.** `<br>`, `<kbd>`, `<details>` and every other tag are shown as written, with a warning. The exceptions
-  are a comment, `<!-- … -->`, which is never shown, and Markanto's own `<m>`, `<i>` and `<b>` (below).
+- **No HTML.** `<br>`, `<kbd>`, `<details>` and every other tag in ordinary text are shown as written, with a
+  warning. The exceptions are a comment, `<!-- … -->`, which is never shown, and Markanto's own `<m>`, `<i>` and
+  `<b>` (below).
 - **A line break ends the line with `\`.** Two trailing spaces are read as one too and written as `\`.
 - **Lists nest by two spaces per level**, under numbered items too:
 

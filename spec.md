@@ -31,40 +31,50 @@ accepts exactly what it accepted before.
   column of the parent item (`1. ` → three spaces, `10. ` → four), or at four
   spaces, under every kind of marker (§9.4). 0.2.0 delegated the accepted
   columns to CommonMark's assignment rule; 0.3.0 names these three, and no
-  other column is read. The formatter writes two spaces per level, and strict
-  mode accepts nothing else.
+  other column is read; the column of an item's first nested marker is also
+  the base of its blocks after a blank line (§9.8). The formatter writes two
+  spaces per level, and strict mode accepts nothing else.
 2. **Two or more spaces after a list marker.** `-  item` and `1.  item` open a
   list item in normal mode; canonical is one space (§9.3, §9.3.1, §9.18.1). In
   0.2.0 they were error 9.2, "empty list item", although the item was not
   empty.
-3. **A line without `>` after a quote is reported.** It still ends the quote
-  (§3.7); normal mode now says so with a warning, because CommonMark would
-  continue the quote there.
+3. **A line without `>` after a quote is reported.** It still ends the quote;
+  normal mode now says so with a warning, within the bounds of §3.7, because
+  a Markdown reader may continue the quote's paragraph there.
 4. **Tag-like text is reported.** `<br>`, `<details>` and every other
-  `<tag …>` outside code stay text, as before, and get a warning (§10.4).
+  `<tag …>` in ordinary inline text stay text, as before, and get a warning;
+  §10.4 bounds the check — code, math, a superscript or subscript, a link
+  destination and an escaped `\<` are not examined.
 5. **A paragraph line directly over `---` is an error**, as one over `===` has
   been (§2.1, §2.2). In 0.2.0 it was silently a paragraph and a thematic break,
   where CommonMark reads a heading.
 6. **A link-reference definition line is reported.** `[label]: target` at the
   start of a paragraph stays text, as before, and gets a warning that names
   the direct form `[text](target)` (§10.5).
-7. **Tab indentation gets the advisory of four spaces.** A new block whose
-  first line is indented with a tab is read without the indentation and
-  reported, as one indented four spaces has been (§1.2, §7.4).
+7. **Tab indentation gets the advisory of four spaces.** An ordinary
+  paragraph whose first line is indented with a tab is read without the
+  indentation and reported, as one indented four spaces has been (§1.2, §7.4);
+  a tab before a list marker stays error 9.5.
 8. **Diagnostics say what to write.** Where a diagnostic can tell the author
   what to write instead, it does: for an emphasis opened inside the same kind
   of emphasis, for a space in a link destination, and for a list item at an
   indentation Markanto does not read (§7.8).
 
 Every document that is valid Markanto 0.2.0 is valid 0.3.0 with the same
-meaning and the same canonical form, with two exceptions. A paragraph line
+meaning and the same canonical form, with three exceptions. A paragraph line
 directly followed by a line of three or more hyphens is now a syntax error
 (change 5); this includes a first line indented four or more spaces, which
 Markanto reads as a paragraph. And a nested list marker on a column that 0.2.0
 left to CommonMark's assignment but that is none of the three columns of §9.4
 — three or five spaces under `- `, for example — is error 9.3; the reference
-implementation never read such a column, so no parsed document changes. The
-new warnings make no document invalid; §7.8 lists them.
+implementation never read such a column, so no parsed document changes. And
+after a blank line in a list item, a line indented four or more spaces past
+the item's base stays in the list (§9.8): the nested item whose base it
+reaches takes it, else it is the item's own paragraph with the advisory of
+§1.2; 0.2.0 did not say where such a line belongs, and the reference
+implementation 0.2.3 ended the list there, which left the canonical form of a
+third-level item's second block unreadable. The new warnings make no document
+invalid; §7.8 lists them.
 
 The info string of a code fence stays one token (§2.4), and an unclosed
 backtick stays an error (§10.9); both were questioned for this version and
@@ -161,12 +171,12 @@ table.
 | ATX headings | retained; Markanto canonical rules apply; an empty heading is a syntax error |
 | Setext headings | not recognised — a paragraph line directly followed by a line of only `=`, or of three or more `-`, is a syntax error (2.1), never a heading and never silently a paragraph with a thematic break; the import path (16) converts one to ATX |
 | thematic breaks | retained, but `_` form excluded; `---` canonical; malformed delimiter-looking paragraph text follows the normal-mode literal-delimiter fallback rule |
-| indented code blocks | excluded; fenced code blocks only; a 4-space-indented line is not an indented-code construct. When a new block's first line carries four or more leading spaces, or a tab in its leading whitespace — the surface CommonMark reads as indented code — normal mode keeps the prose and drops the indentation, but emits an **advisory** diagnostic so the discarded surface is not silent; strict mode rejects it as noncanonical. The import path (16) rewrites real indented code to a fenced block |
+| indented code blocks | excluded; fenced code blocks only; a 4-space-indented line is not an indented-code construct. When an ordinary paragraph's first line carries four or more leading spaces, or a tab in its leading whitespace — the surface CommonMark reads as indented code — normal mode keeps the prose and drops the indentation, but emits an **advisory** diagnostic so the discarded surface is not silent (7.4); a list marker behind such indentation is a list error (9.13); strict mode rejects the surface as noncanonical. The import path (16) rewrites real indented code to a fenced block |
 | fenced code blocks | retained with Markanto canonicalisation |
-| HTML blocks / raw inline HTML | excluded; tag-like text such as `<br>`, `<div class="x">` or `</div>` stays text and gets a warning in normal mode (10.4) |
+| HTML blocks / raw inline HTML | excluded; tag-like text such as `<br>`, `<div class="x">` or `</div>` stays text and, in ordinary inline text, gets a warning in normal mode within the bounds of 10.4 |
 | HTML comments | retained only as the dedicated `CommentBlock` syntax in 2.4.1; visible text after `-->` on the closing line is a syntax error |
-| block quotes | retained with explicit prefix on every belonging line; lazy continuation excluded — a line without `>` ends the quote, and normal mode reports a non-blank one with a warning (3.7) |
-| CommonMark lists | retained with Markanto list, indentation, and recursion rules; normal mode also reads a nested list marker on the parent's content column or four spaces in (9.4) and more than one space after a marker (9.3); canonical is two spaces per level and one space after the marker |
+| block quotes | retained with explicit prefix on every belonging line; lazy continuation excluded — a line without `>` ends the quote, and normal mode reports a non-blank one with a warning within the bounds of 3.7 |
+| CommonMark lists | retained with Markanto list, indentation, and recursion rules; normal mode also reads a nested list marker on the parent's content column or four spaces in (9.4) and more than one space after a marker (9.3), and a block after a blank line belongs to the item from its base (9.8); canonical is two spaces per level and one space after the marker |
 | GFM task-list markers | retained with Markanto canonicalisation |
 | GFM pipe tables | retained with Markanto table and canonicalisation rules |
 | GFM strikethrough | retained as `Deletion`; `~~…~~` may preserve a `SoftBreak` in multiline-capable block content, but not a `HardBreak` |
@@ -1113,13 +1123,13 @@ reports it: a non-blank line directly after the last line of a quote region,
 in the block sequence that owns the quote, that carries no quote prefix and is
 neither an attribution line (3.17) nor a block-ID line (3.22) gets an
 `advisory`/`warning` diagnostic, "a line without `>` ends the quote" (7.8). A
-line the enclosing structure claims is not such a line and is not reported:
-the closer of a container, a Grid marker line (2.7.7), or a line past the end
-of the list item that holds the quote — the quote parser never reads those as
-candidates, since it works on the lines its owning sequence hands it. It
-already looks at the next line for the attribution; the check costs no further
-read. Within the owning sequence the canonical form puts a blank line after
-the quote, so strict mode rejects the reported surface anyway; the diagnostic
+line that ends the owning sequence itself is not reported: the closer of a
+container, or a Grid marker line (2.7.7). The sequence checks that boundary
+before every block, and the quote applies the same check to the line it
+already reads for the attribution; a line past the end of the list item that
+holds the quote never reaches it (9.8). The check costs no further read.
+Within the owning sequence the canonical form puts a blank line after the
+quote, so strict mode rejects the reported surface anyway; the diagnostic
 makes no document invalid.
 
 CommonMark lazy continuation may be recognised only during an explicit
@@ -2197,7 +2207,7 @@ surface as noncanonical or accepts it as before.
 | Surface | Section |
 | --- | --- |
 | an ordinary paragraph's first line indented four or more spaces, or with a tab in its leading whitespace | 1.2, 7.4 |
-| a non-blank line without `>` directly after a quote region, in the sequence that owns the quote and not claimed by the enclosing structure | 3.7 |
+| a non-blank line without `>` directly after a quote region, in the sequence that owns the quote and not the boundary that ends that sequence | 3.7 |
 | tag-like spelling in ordinary inline text | 10.4 |
 | a paragraph that begins with a definition-like `[label]:` | 10.5 |
 | a footnote definition that no reference uses | 11.3 |
@@ -2434,10 +2444,11 @@ each other: after `1. A` with `   - B` on the content column, `  - C` at two
 spaces is B's sibling, as it is today. No other column than these three is
 read; a marker elsewhere is error 9.3 or 9.4, with a diagnostic that names the
 columns read there (7.8). The rule assigns nested list markers only: a
-continuation line belongs to an item by 9.6, and a paragraph, table or quote
-after a blank line by 9.8 and 9.9, unchanged. The formatter projects every
-accepted surface to two spaces per semantic level. Strict mode accepts only
-canonical indentation. Tabs are not permitted as indentation.
+continuation line belongs to an item by 9.6, and a paragraph, quote, fence or
+table after a blank line by the item's base of 9.8, which the column of the
+first nested marker sets. The formatter projects every accepted surface to
+two spaces per semantic level. Strict mode accepts only canonical
+indentation. Tabs are not permitted as indentation.
 
 ### 9.5 Level changes
 
@@ -2517,9 +2528,26 @@ closer, keeps this base indentation.
 ````
 
 A blank line closes the current leaf block, not automatically the list item.
-The list item stays open if the next non-empty line unambiguously belongs to
-its child indentation. Otherwise the list ends. At most one line of
-lookahead is required for this; backtracking is not necessary.
+The next non-empty line belongs to the item when it is indented at least the
+item's **base**. The base is two spaces; when the item's first nested list
+marker stands on the content column or four spaces in (9.4), the base is that
+column, and a nested marker at two spaces sets it back to two. The base is
+removed from the line, and the item's block sequence reads the rest with the
+ordinary grammar: a nested item claims it by the same rule, and a paragraph
+that keeps four or more surplus spaces gets the advisory of 1.2 — the line is
+the item's, not the list's end. A line indented less than the base ends the
+list (9.9). At most one line of lookahead is required for this; backtracking
+is not necessary.
+
+| After `1. A` and `   - B` | After `- A` and `    - B` | Belongs to |
+| --- | --- | --- |
+| `  text` (two spaces) | `   text` (three) | no item: less than the base |
+| `   text` (three) | `    text` (four) | A: on its base |
+| `     text` (five) | `      text` (six) | B: two past A's base |
+
+After `- A` and `  - B` the base is two: `  text` belongs to A, `    text` and
+`      text` to B, and `        text` — four past B's base — to B as well,
+with the advisory.
 
 ### 9.9 List end and siblings
 
@@ -2529,10 +2557,10 @@ item.
 A blank line takes the list out of the simple form (9.7); it does **not** end
 the list. The next non-empty line is then considered:
 
-- child indentation of the current item → a further block element of the
-  same item (the list is now structured),
+- indentation of at least the base of the current item (9.8) → a further
+  block element of the same item (the list is now structured),
 - list marker at an open list level → a new item of the **same** list,
-- lesser or foreign indentation → list ended.
+- less than the base of every open item → list ended.
 
 Because there is no tight/loose distinction (9.14, 9.15), a blank line between
 items carries no meaning: the canonical form of a list is always tight
