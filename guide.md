@@ -12,18 +12,19 @@ with `>`, pipe tables, `~~strikethrough~~`, `---` as a break, and backslash esca
 address becomes a link; `www.example.org` and an email address stay text.
 
 Some accepted forms are written back in one canonical form: `_emphasis_` as `*emphasis*`, `__strong__` as
-`**strong**`, `***` as `---`, `~~~` fences as ```` ``` ````. They mean the same.
+`**strong**`, `***` as `---`, `~~~` fences as ```` ``` ````, two spaces after a list marker (`-  item`) as one. They
+mean the same.
 
 ## Written differently
 
-- **Headings only with `#`.** A line underlined with `===` is an error, not a heading. One underlined with `---` is a
-  paragraph followed by a break. A heading is never empty.
-- **Code only in fences.** Four spaces in front of a line make no code block; the indentation is dropped, with a
-  warning.
+- **Headings only with `#`.** A line underlined with `===` or `---` is an error, not a heading. A heading is never
+  empty.
+- **Code only in fences.** Four spaces or a tab in front of a line make no code block; the indentation is dropped,
+  with a warning.
 - **Links only directly.** `[text](https://example.org)` is a link; the reference form `[text][1]` with a line
-  `[1]: https://example.org` stays text.
-- **No HTML.** `<br>`, `<kbd>`, `<details>` and every other tag are shown as written. The exceptions are a comment,
-  `<!-- … -->`, which is never shown, and Markanto's own `<m>`, `<i>` and `<b>` (below).
+  `[1]: https://example.org` stays text, and the line gets a warning.
+- **No HTML.** `<br>`, `<kbd>`, `<details>` and every other tag are shown as written, with a warning. The exceptions
+  are a comment, `<!-- … -->`, which is never shown, and Markanto's own `<m>`, `<i>` and `<b>` (below).
 - **A line break ends the line with `\`.** Two trailing spaces are read as one too and written as `\`.
 - **Lists nest by two spaces per level**, under numbered items too:
 
@@ -34,8 +35,9 @@ Some accepted forms are written back in one canonical form: `_emphasis_` as `*em
     - a point under it
   ```
 
-  A level is at most one deeper than the line before it.
-- **Every line of a quote starts with `>`.** A line without it ends the quote.
+  A nested list is also read four spaces in under `-`, or aligned with the text of a numbered item (three spaces
+  under `1. `); it is written back with two. A level is at most one deeper than the line before it.
+- **Every line of a quote starts with `>`.** A line without it ends the quote, with a warning.
 - **Emphasis begins and ends at the edge of a word.** `snake*case*word` and `foo**bar**` stay as written.
 - **A single `~` on each side is subscript**, as in `H~2~O`; GitHub strikes `~Hi~` through instead. Strikethrough is
   `~~Hi~~`.
