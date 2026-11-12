@@ -27,12 +27,12 @@ CommonMark 0.31.2 and GFM test suites. No canonical form changes; strict mode
 accepts exactly what it accepted before.
 
 1. **A nested list on its parent's content column or four spaces in.** Normal
-  mode reads a child list at two spaces (canonical), at the column where the
-  parent's text begins (`1. ` → three spaces, `10. ` → four), or at four spaces
-  under an unordered marker; the first child line of an item fixes its child
-  column (§9.4). 0.2.0 delegated the accepted columns to CommonMark's
-  assignment rule; 0.3.0 names them, and no other column is read. The
-  formatter writes two spaces per level, and strict mode accepts nothing else.
+  mode reads a nested list marker at two spaces (canonical), on the content
+  column of the parent item (`1. ` → three spaces, `10. ` → four), or at four
+  spaces, under every kind of marker (§9.4). 0.2.0 delegated the accepted
+  columns to CommonMark's assignment rule; 0.3.0 names these three, and no
+  other column is read. The formatter writes two spaces per level, and strict
+  mode accepts nothing else.
 2. **Two or more spaces after a list marker.** `-  item` and `1.  item` open a
   list item in normal mode; canonical is one space (§9.3, §9.3.1, §9.18.1). In
   0.2.0 they were error 9.2, "empty list item", although the item was not
@@ -57,13 +57,18 @@ accepts exactly what it accepted before.
   indentation Markanto does not read (§7.8).
 
 Every document that is valid Markanto 0.2.0 is valid 0.3.0 with the same
-meaning and the same canonical form, with one exception: a paragraph line
+meaning and the same canonical form, with two exceptions. A paragraph line
 directly followed by a line of three or more hyphens is now a syntax error
-(change 5). The new warnings make no document invalid; §7.8 lists them.
+(change 5); this includes a first line indented four or more spaces, which
+Markanto reads as a paragraph. And a nested list marker on a column that 0.2.0
+left to CommonMark's assignment but that is none of the three columns of §9.4
+— three or five spaces under `- `, for example — is error 9.3; the reference
+implementation never read such a column, so no parsed document changes. The
+new warnings make no document invalid; §7.8 lists them.
 
-Two questions are open while this version is a draft and are decided before it
-is frozen: further fields in the info string of a code fence (§2.4), and an
-unclosed backtick as text rather than an error (§10.9).
+The info string of a code fence stays one token (§2.4), and an unclosed
+backtick stays an error (§10.9); both were questioned for this version and
+decided to stay, with diagnostics that say what to write.
 
 ## Reserved wrapper tags
 
@@ -161,7 +166,7 @@ table.
 | HTML blocks / raw inline HTML | excluded; tag-like text such as `<br>`, `<div class="x">` or `</div>` stays text and gets a warning in normal mode (10.4) |
 | HTML comments | retained only as the dedicated `CommentBlock` syntax in 2.4.1; visible text after `-->` on the closing line is a syntax error |
 | block quotes | retained with explicit prefix on every belonging line; lazy continuation excluded — a line without `>` ends the quote, and normal mode reports a non-blank one with a warning (3.7) |
-| CommonMark lists | retained with Markanto list, indentation, and recursion rules; normal mode also reads a nested list on the parent's content column or four spaces under an unordered marker (9.4) and more than one space after a marker (9.3); canonical is two spaces per level and one space after the marker |
+| CommonMark lists | retained with Markanto list, indentation, and recursion rules; normal mode also reads a nested list marker on the parent's content column or four spaces in (9.4) and more than one space after a marker (9.3); canonical is two spaces per level and one space after the marker |
 | GFM task-list markers | retained with Markanto canonicalisation |
 | GFM pipe tables | retained with Markanto table and canonicalisation rules |
 | GFM strikethrough | retained as `Deletion`; `~~…~~` may preserve a `SoftBreak` in multiline-capable block content, but not a `HardBreak` |
@@ -255,16 +260,20 @@ least one ASCII space before the first content character.
 There is no heading-specific `\\n` escape. Visual wrapping is renderer or
 editor behaviour, not heading syntax.
 
-A Setext underline is rejected exactly where CommonMark would read one: a line
-of only `=` characters, or of only three or more `-` characters, with up to
-three leading spaces and trailing blanks, directly after a paragraph line is a
-syntax error, "setext heading not permitted", in both modes — the author most
-likely meant a heading, and a silent paragraph with a thematic break would hide
-that. The paragraph makes this check where it decides whether a line continues
-it, before the line is tried as a thematic break or list marker. Standalone
-(including after a blank line) an equals-only line is literal paragraph text
-and a hyphen-only line is a thematic break (2.2). The import path (16) converts
-a Setext heading to an ATX heading.
+A Setext underline is rejected after Markanto's own paragraph and context
+assignment: a line of only `=` characters, or of only three or more `-`
+characters, with up to three leading spaces and trailing blanks, directly after
+a line of the paragraph being read is a syntax error, "setext heading not
+permitted", in both modes — the author most likely meant a heading, and a
+silent paragraph with a thematic break would hide that. The paragraph makes
+this check where it decides whether a line continues it, before the line is
+tried as a thematic break or list marker (2.5, 15.1). The rule is not
+CommonMark's: `x` over `--` stays a two-line paragraph (`--` is also the Grid
+column separator, 2.7.7), and a first line indented four or more spaces is a
+paragraph line here, not indented code. Standalone (including after a blank
+line) an equals-only line is literal paragraph text and a hyphen-only line is
+a thematic break (2.2). The import path (16) converts a Setext heading to an
+ATX heading.
 
 ### 2.2 Thematic break (HR)
 
@@ -351,7 +360,8 @@ least as long as the opener.
 Markanto deliberately narrows the CommonMark info string to either nothing or
 **one non-empty whitespace-free language token** immediately following the
 opening fence. Additional whitespace-separated info-string fields are syntax
-errors; they are not discarded. The token `math` denotes `MathBlock` rather
+errors; they are not discarded, and the diagnostic says that only the language
+token stands there (7.8). The token `math` denotes `MathBlock` rather
 than `CodeBlock`. For backtick fences the language token may not contain a
 backtick: a ```` ``` ````-prefixed line whose remainder contains a backtick is
 therefore **not** a code fence at all — it is ordinary paragraph content whose
@@ -452,7 +462,9 @@ More precisely:
   same paragraph. Two paragraphs require a blank line.
 - Unambiguous block starts such as heading, HR, code/math fence, list,
   quote, fenced container, block media, and confirmed table may follow a
-  previous block directly in normal mode.
+  previous block directly in normal mode. One exception: a hyphen-only line
+  of three or more directly after a paragraph line is the Setext error of 2.1,
+  not a thematic break.
 - In strict mode, exactly one canonical blank line is required between
   sibling blocks, except at document boundaries, within a coherent list
   sequence, within a fence, or before an immediate `{#id}` suffix.
@@ -1085,7 +1097,7 @@ Valid:
 > continued on the next source line.
 ```
 
-Invalid:
+Ends the quote:
 
 ```text
 > This is a longer paragraph,
@@ -1096,15 +1108,19 @@ The second line does not belong to the quote in Markanto. If it follows
 without a separating blank line, it begins a new block outside the quote or
 produces an error there per the general block grammar.
 
-Because CommonMark would read such a line as a lazy continuation of the quote,
-normal mode reports it: a non-blank line directly after the last line of a
-quote region that carries no quote prefix and is neither an attribution line
-(3.17), a block-ID line (3.22), nor the closer of the enclosing container gets
-an `advisory`/`warning` diagnostic, "a line without `>` ends the quote" (7.8).
-The quote parser already looks at that line for the attribution; the check
-costs no further read. The canonical form separates the quote from the next
-block by a blank line, so the reported surface is noncanonical in any case;
-the diagnostic makes no document invalid.
+Because a Markdown reader may continue the quote on such a line, normal mode
+reports it: a non-blank line directly after the last line of a quote region,
+in the block sequence that owns the quote, that carries no quote prefix and is
+neither an attribution line (3.17) nor a block-ID line (3.22) gets an
+`advisory`/`warning` diagnostic, "a line without `>` ends the quote" (7.8). A
+line the enclosing structure claims is not such a line and is not reported:
+the closer of a container, a Grid marker line (2.7.7), or a line past the end
+of the list item that holds the quote — the quote parser never reads those as
+candidates, since it works on the lines its owning sequence hands it. It
+already looks at the next line for the attribution; the check costs no further
+read. Within the owning sequence the canonical form puts a blank line after
+the quote, so strict mode rejects the reported surface anyway; the diagnostic
+makes no document invalid.
 
 CommonMark lazy continuation may be recognised only during an explicit
 CommonMark import through a preceding CommonMark parser, and then converted
@@ -2045,9 +2061,11 @@ general parser rewind/backtracking.
   both modes.
 - Tabs are not permitted as structural indentation. Tabs may occur as literal
   running-text characters where the inline grammar permits them. A tab in the
-  leading whitespace of a new block's first line is dropped with the
-  indentation advisory of 1.2, as four or more spaces are: CommonMark reads
-  either as indented code.
+  leading whitespace of an ordinary paragraph's first line, after valid outer
+  prefixes are removed, is dropped with the indentation advisory of 1.2, as
+  four or more spaces are: CommonMark reads either as indented code. The
+  structural errors come first — `\t- item` stays error 9.5, not a
+  paragraph — and a continuation line or literal content gets no advisory.
 - Canonical output ends in exactly one LF — with no exception for the empty
   document, whose canonical surface is a single LF (`"\n"`). Normal mode accepts
   input that ends in no LF or in several consecutive trailing LFs and normalises
@@ -2178,10 +2196,10 @@ surface as noncanonical or accepts it as before.
 
 | Surface | Section |
 | --- | --- |
-| a new block's first line indented four or more spaces, or with a tab in its leading whitespace | 1.2, 7.4 |
-| a non-blank line without `>` directly after a quote region | 3.7 |
-| tag-like text, `<name …>` or `</name>`, outside code | 10.4 |
-| a paragraph whose first line begins with `[label]:` | 10.5 |
+| an ordinary paragraph's first line indented four or more spaces, or with a tab in its leading whitespace | 1.2, 7.4 |
+| a non-blank line without `>` directly after a quote region, in the sequence that owns the quote and not claimed by the enclosing structure | 3.7 |
+| tag-like spelling in ordinary inline text | 10.4 |
+| a paragraph that begins with a definition-like `[label]:` | 10.5 |
 | a footnote definition that no reference uses | 11.3 |
 
 **What a diagnostic says.** The wording stays implementation-defined, but a
@@ -2190,15 +2208,21 @@ and the form to write instead, in the words of a Markdown writer rather than
 of the grammar. In particular:
 
 - a second opener of the same kind inside an open emphasis or strong emphasis
-  (10.6, error 10.7) says that this `*` (or `_`, `**`, `__`) opens a second
-  emphasis inside the first, and that `\*` writes a literal one;
+  (10.6, error 10.7) names the opener found and the escape that writes it as
+  text by the leftmost-effective rule of 10.8: `\*` for `*`, `\*\*` for `**`,
+  `\_` for `_`, `\__` for `__`; for a wrapper it says that `<i>` (or `<b>`) is
+  open already and that `\<i>` writes the tag as text;
 - a malformed destination after `](` (10.5.1, error 10.1) says what is wrong
   with it — a space, an unbalanced parenthesis, a malformed title — and, for a
   space, that `<…>` around the destination or `%20` writes it;
 - a list marker at an indentation Markanto does not read (9.4, errors 9.3 and
   9.4) says how many spaces the line has and which indentations are read there:
-  none for a new list, two for a nested list, the parent's content column, or
-  four under an unordered parent.
+  none for a new list, or two, the parent's content column, or four for a
+  nested one;
+- a code fence with more than one info-string field (2.4) says that only the
+  language token stands there;
+- an unclosed backtick run (10.9, error 10.4) says that `` \` `` writes a
+  literal backtick.
 
 ## 8. Scope boundaries and extension policy
 
@@ -2394,23 +2418,26 @@ The canonical indentation is exactly **2 ASCII spaces per level**.
 | 4 spaces | 3 |
 | 2n spaces | n+1 |
 
-Normal mode also reads a nested list whose marker stands on one of two further
-columns, both common in Markdown:
+Normal mode also reads a nested list marker on two further columns, both
+common in Markdown, measured from the marker of the innermost open item:
 
-- the **content column** of the parent item — the column where the parent's
-  text begins, after its marker and the spaces that follow it: three spaces
-  under `1. `, four under `10. `, three under `-  ` with two spaces;
-- **four spaces** past the marker of an unordered parent (`- `, `* `, `+ `).
+- the **content column** of that item — the column after its marker and the
+  spaces that follow it: three under `1. `, four under `10. `, five under
+  `100. `, three under `-  ` written with two spaces. A task marker is content
+  and does not move it: three under `1. [x] `;
+- **four spaces**, under every kind of marker.
 
-The first nested marker after an item's introductory paragraph — at two spaces
-or on one of these columns — fixes the item's child column; every later child
-line of that item is measured against it. So `- A`, then `  1. B`, then
-`    - C` nests C under B, as the canonical form does. No other column is read:
-one or three spaces under `- `, five or more spaces, four under `1. `, and a
-column that belongs to no open item are error 9.3 or 9.4, with a diagnostic
-that names the columns read there (7.8). The formatter projects every accepted
-surface to two spaces per semantic level. Strict mode accepts only canonical
-indentation. Tabs are not permitted as indentation.
+The canonical column is assigned first, so `- A`, `  - B`, `    - C` nests C
+under B — relative to B it stands at two spaces — and `10. A`, `  - B` nests B
+under A although four is A's content column. The columns are not bound to
+each other: after `1. A` with `   - B` on the content column, `  - C` at two
+spaces is B's sibling, as it is today. No other column than these three is
+read; a marker elsewhere is error 9.3 or 9.4, with a diagnostic that names the
+columns read there (7.8). The rule assigns nested list markers only: a
+continuation line belongs to an item by 9.6, and a paragraph, table or quote
+after a blank line by 9.8 and 9.9, unchanged. The formatter projects every
+accepted surface to two spaces per semantic level. Strict mode accepts only
+canonical indentation. Tabs are not permitted as indentation.
 
 ### 9.5 Level changes
 
@@ -2970,15 +2997,18 @@ Relevant priority classes include:
 
 MIB tag names and closers are exact lowercase. `<i>` and `<b>` accept no
 attributes. `<m>` uses the grammar in 4.7. Unknown `<...>` constructs are not
-raw HTML and remain subject to Markanto's ordinary text/error rules. When such
-a construct looks like an HTML tag — `<`, an optional `/`, an ASCII letter,
-then ASCII letters, digits or `-`, followed by whitespace, `/` or `>`, and a
-`>` later on the same line — normal mode reports it as `advisory`/`warning`
-(7.8): the text stays as written, since Markanto has no raw HTML (8.2). The
-check is made at the `<` that the scanner has already failed to read as a
-wrapper or autolink, with the search for `>` the bracketed autolink makes;
-`a<b` without a later `>`, and `<irc://…>` or `<MAILTO:…>` with a form chapter
-13 does not link, are not reported.
+raw HTML and remain subject to Markanto's ordinary text/error rules. A
+tag-like spelling in ordinary inline text — `<`, an optional `/`, an ASCII
+letter, then ASCII letters, digits or `-`, followed by whitespace, `/` or `>`,
+and a `>` later in the same inline content — is reported by normal mode as
+`advisory`/`warning` (7.8). It gets no HTML meaning, and the ordinary inline
+grammar stays active around and inside it: `<x *a*>` is still text, `Em`,
+text. The check is made at the `<` that the scanner has already failed to read
+as a wrapper or autolink, with the search for `>` the bracketed autolink
+makes; nothing else is examined — not a code span, inline math, a `Sup` /
+`Sub` value, a link destination or title, an escaped `\<`, or a decoded
+entity. `a<b` without a later `>`, and `<irc://…>` or `<MAILTO:…>` with a form
+chapter 13 does not link, are not reported.
 
 ### 10.5 Structured tokens — delimitation
 
@@ -3016,14 +3046,17 @@ resolve symbolic `$identifier` destinations against block IDs or another
 application-level symbol table. Neither resolution mechanism changes the
 Markanto AST.
 
-A paragraph whose first line begins with a definition of that excluded form —
-`[`, a label that does not begin with `^` and contains no `]`, then `]:`, then
-a space or the line end — stays text, as every bracket text does, and normal
-mode reports it as `advisory`/`warning` with the form to write instead,
-`[text](target)` (7.8). The check reads the paragraph's first line once, where
-the indentation advisory of 1.2 already reads it; a definition further down a
-paragraph is text for CommonMark too and is not reported. `[^id]: …` at
-document level is a footnote definition (11).
+A paragraph that begins with a definition-like line — `[`, a non-empty label
+that does not begin with `^`, its closing `]`, then `:` directly — stays text,
+as every bracket text does, and normal mode reports it once as
+`advisory`/`warning` with the form to write instead, `[text](target)` (7.8).
+This is a hint on a surface, not a CommonMark definition parser: `[r]:/u`
+without a space is reported too, and whether a target follows is not checked.
+The check is made at the `[` the inline scanner reads at the start of the
+paragraph's content, with the label search it already makes for a direct link
+(10.5.1), escapes included: when the `]` it finds is followed by `:` rather
+than `(`, the paragraph is reported. Later lines of the paragraph are not
+examined. `[^id]: …` at document level is a footnote definition (11).
 
 The MIB opener prefixes `<m`, `<i`, and `<b` are recognised before general
 autolink handling. A wrapper opener is confirmed only by the complete wrapper
@@ -3099,9 +3132,10 @@ Canonical serialisation:
 
 Inline nodes nest only where their individual grammars permit it; crossing
 or overlapping delimiters are invalid. An opener of the same kind directly
-inside an open node of that kind (`*a *b* c*`, `*(*foo)`) is error 10.7; its
-diagnostic says that the second opener opens a second emphasis inside the
-first and that `\*` writes a literal one (7.8).
+inside an open node of that kind (`*a *b* c*`, `*(*foo)`, `<i>a <i>b</i> c</i>`)
+is error 10.7; its diagnostic names the opener found and the escape of 10.8
+that writes it as text — `\*\*` for `**`, not `\*` alone, which leaves an
+overlapping `*` — or, for a wrapper, `\<i>` (7.8).
 
 `<i>...</i>` and `<b>...</b>` map directly to the existing `Em` and `Strong`
 semantic nodes. They are serialization fallbacks: the formatter uses
@@ -3272,7 +3306,8 @@ Rules:
 - A physical line ending inside inline code is accepted only when it is a
   `SoftBreak` of the same open block, and collapses to one ASCII space in
   `InlineCode.value`; canonical output is therefore always one line.
-- An opener without a matching closer of the same length is a syntax error.
+- An opener without a matching closer of the same length is a syntax error;
+  the diagnostic says that `` \` `` writes a literal backtick (7.8).
 - The scanner first determines the length of the opening run and then
   searches left to right for the next run of exactly the same length.
 - The formatter chooses the **shortest** backtick run longer than any
@@ -3919,8 +3954,9 @@ blocks before falling back to paragraph text. The relevant order is:
 12. paragraph.
 
 Escapes are accounted for before a candidate marker run is accepted as a
-container fence. Table and typed-lined confirmation each use at most one
-logical line of lookahead. A later table separator never retroactively overrides
+container fence. A paragraph in progress checks a Setext underline (2.1) before
+it lets a thematic break (step 8) or a list marker (step 9) end it. Table and
+typed-lined confirmation each use at most one logical line of lookahead. A later table separator never retroactively overrides
 a structural opener recognised at step 8. A line that is the active closer for the current
 container/literal context cannot simultaneously serve as lookahead confirmation
 for a nested typed lined container or any competing opener.

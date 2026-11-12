@@ -19,8 +19,8 @@ mean the same.
 
 - **Headings only with `#`.** A line underlined with `===` or `---` is an error, not a heading. A heading is never
   empty.
-- **Code only in fences.** Four spaces or a tab in front of a line make no code block; the indentation is dropped,
-  with a warning.
+- **Code only in fences.** Four spaces or a tab in front of a paragraph's first line make no code block; the
+  indentation is dropped, with a warning.
 - **Links only directly.** `[text](https://example.org)` is a link; the reference form `[text][1]` with a line
   `[1]: https://example.org` stays text, and the line gets a warning.
 - **No HTML.** `<br>`, `<kbd>`, `<details>` and every other tag are shown as written, with a warning. The exceptions
@@ -35,9 +35,10 @@ mean the same.
     - a point under it
   ```
 
-  A nested list is also read four spaces in under `-`, or aligned with the text of a numbered item (three spaces
-  under `1. `); it is written back with two. A level is at most one deeper than the line before it.
-- **Every line of a quote starts with `>`.** A line without it ends the quote, with a warning.
+  A nested list is also read four spaces in, or aligned with the item's text (three spaces under `1. `); it is
+  written back with two. A level is at most one deeper than the line before it.
+- **Every line of a quote starts with `>`.** A line without it ends the quote; text right after the quote, without
+  a blank line, gets a warning.
 - **Emphasis begins and ends at the edge of a word.** `snake*case*word` and `foo**bar**` stay as written.
 - **A single `~` on each side is subscript**, as in `H~2~O`; GitHub strikes `~Hi~` through instead. Strikethrough is
   `~~Hi~~`.
