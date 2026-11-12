@@ -2535,9 +2535,10 @@ column, and a nested marker at two spaces sets it back to two. The base is
 removed from the line, and the item's block sequence reads the rest with the
 ordinary grammar: a nested item claims it by the same rule, and a paragraph
 that keeps four or more surplus spaces gets the advisory of 1.2 — the line is
-the item's, not the list's end. A line indented less than the base ends the
-list (9.9). At most one line of lookahead is required for this; backtracking
-is not necessary.
+the item's, not the list's end. A line indented less than the base closes the
+item and every deeper level; whether an outer item takes it or a sibling
+marker continues the list is decided by 9.9. At most one line of lookahead is
+required for this; backtracking is not necessary.
 
 | After `1. A` and `   - B` | After `- A` and `    - B` | Belongs to |
 | --- | --- | --- |
