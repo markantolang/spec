@@ -13,11 +13,12 @@ version.
 
 | Version | Tag | Read online |
 | --- | --- | --- |
-| 0.2.0 | `v0.2.0` | <https://markanto.org/spec/> |
+| 0.3.0 | `v0.3.0` | <https://markanto.org/spec/> |
+| 0.2.0 | `v0.2.0` | <https://markanto.org/spec/0.2.0/> |
 | 0.1.0 | `v0.1.0` | <https://markanto.org/spec/0.1.0/> |
 
 Each version lists its changes in a section "Changes from …" near its start;
-`git diff v0.1.0 v0.2.0` shows them in full.
+`git diff v0.2.0 v0.3.0` shows them in full.
 
 ## Guide
 
